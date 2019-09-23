@@ -12,29 +12,76 @@ import Select from "react-select";
 import axios from "axios";
 import { api } from "./api/config";
 
-const options = [
-  { value: "chocolate", label: "Chocolate" },
-  { value: "strawberry", label: "Strawberry" },
-  { value: "vanilla", label: "Vanilla" }
+const options_style = [
+  { value: "Classic", label: "Classic" },
+  { value: "Midcentury", label: "Midcentury" },
+  { value: "Scandinavian", label: "Scandinavian" },
+  { value: "Modern", label: "Modern" },
+  { value: "Contemporary", label: "Contemporary" }
+];
+
+const options_date = [
+  { value: "1", label: "1 Week" },
+  { value: "2", label: "2 Week" },
+  { value: "3", label: "3 Week" },
+  { value: "4", label: "4 Week" }
 ];
 
 class App extends Component {
+  state = {
+    furnitures: [],
+    search: ""
+  };
+
+  renderSearch = (furniture_box, i) => {
+    return (
+      <Col md={4} className="my-2" key={i}>
+        <Card>
+          <CardBody>
+            <p className="font-weight-bold">
+              {furniture_box.name}
+              <span
+                className="float-right text-warning mt-1"
+                style={{ fontSize: "14px" }}
+              >
+                IDR{" "}
+                {furniture_box.price
+                  .toString()
+                  .replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,")}
+              </span>
+            </p>
+            <p className="text-muted">
+              {furniture_box.description.substring(0, 114)}
+              {furniture_box.description.length > 114 && "..."}
+            </p>
+            <p className="text-primary">
+              {furniture_box.furniture_style.join(", ")}
+            </p>
+            <p className="text-right">{furniture_box.delivery_time}</p>
+          </CardBody>
+        </Card>
+      </Col>
+    );
+  };
+
+  onchange = e => {
+    this.setState({ search: e.target.value });
+  };
+
   componentDidMount() {
-    axios
-      .get(api)
-      .then(function(response) {
-        // handle success
-        console.log(response);
-      })
-      .catch(function(error) {
-        // handle error
-        console.log(error);
-      })
-      .finally(function() {
-        // always executed
-      });
+    axios.get(api).then(res => {
+      const furnitures = res.data.products;
+      this.setState({ furnitures });
+    });
   }
+
   render() {
+    const { search, furnitures } = this.state;
+    const filteredFurniture = furnitures.filter(furniture_box => {
+      return (
+        furniture_box.name.toLowerCase().indexOf(search.toLowerCase()) !== 1
+      );
+    });
     return (
       <div>
         <header style={{ backgroundColor: "#eaeaea" }}>
@@ -42,23 +89,28 @@ class App extends Component {
             <Row className="py-3">
               <Col md={12}>
                 <FormGroup>
-                  <Input type="text" placeholder="Search...." />
+                  <Input
+                    value={search}
+                    type="text"
+                    onChange={this.onchange}
+                    placeholder="Search...."
+                  />
                 </FormGroup>
               </Col>
               <Col md={6} className="my-3">
                 <h6>Furniture Style</h6>
                 <Select
-                  defaultValue={[options[1]]}
+                  defaultValue={[options_style[1]]}
                   isMulti
                   name="colors"
-                  options={options}
+                  options={options_style}
                   className="basic-multi-select"
                   classNamePrefix="select"
                 />
               </Col>
               <Col md={6} className="my-3">
                 <h6>Delivery Time</h6>
-                <Select options={options} />
+                <Select options={options_date} />
               </Col>
             </Row>
           </Container>
@@ -66,24 +118,9 @@ class App extends Component {
         <div className="py-3">
           <Container>
             <Row>
-              <Col md={4}>
-                <Card>
-                  <CardBody>
-                    <h5>
-                      Product Name{" "}
-                      <span
-                        className="float-right mt-1"
-                        style={{ fontSize: "14px", color: "#DAA520" }}
-                      >
-                        price
-                      </span>
-                    </h5>
-                    <p>Desc</p>
-                    <p>Furniture Style</p>
-                    <p className="text-right">Delivery Time</p>
-                  </CardBody>
-                </Card>
-              </Col>
+              {filteredFurniture.map(furniture_box => {
+                return this.renderSearch(furniture_box);
+              })}
             </Row>
           </Container>
         </div>
